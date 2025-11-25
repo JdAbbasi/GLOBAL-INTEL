@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/png" href="/logo.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>USA Importer Intel</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script type="importmap">
+{
+  "imports": {
+    "react/": "https://aistudiocdn.com/react@^19.2.0/",
+    "react": "https://aistudiocdn.com/react@^19.2.0",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
+    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.29.0"
+  }
+}
+</script>
+  <style>
+    /* Custom scrollbar for a more modern look */
+    ::-webkit-scrollbar {
+      width: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #1e293b; /* slate-800 */
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #475569; /* slate-600 */
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #64748b; /* slate-500 */
+    }
+    body {
+        font-family: 'Inter', sans-serif;
+    }
+
+    @media print {
+      @page {
+        size: A4;
+        margin: 1.5cm;
+      }
+      body, html {
+        background: #fff !important;
+      }
+      /* Hide everything except the modal content */
+      body > #root > div > *:not(.printable-modal-wrapper) {
+        display: none;
+      }
+      .printable-modal-wrapper {
+        position: static;
+        display: block;
+        width: 100%;
+        height: auto;
+        inset: auto;
+        background: transparent !important;
+        backdrop-filter: none !important;
+        padding: 0 !important;
+        justify-content: flex-start;
+        align-items: flex-start;
+      }
+      .printable-content-container {
+        position: static !important;
+        margin: 0 !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        max-height: none !important;
+        box-shadow: none !important;
+        border: none !important;
+        background: #fff !important;
+        overflow-y: visible !important;
+        color-adjust: exact;
+        -webkit-print-color-adjust: exact;
+      }
+      /* Hide non-printable elements within the card */
+      .no-print {
+        display: none !important;
+      }
+      .avoid-break {
+        page-break-inside: avoid;
+      }
+      /* Reset text and background colors for printing */
+      .printable-content-container * {
+        background-color: transparent !important;
+        box-shadow: none !important;
+        text-shadow: none !important;
+        border-color: #ccc !important;
+      }
+      .printable-content-container, .printable-content-container [class*="text-"] {
+        color: #000 !important;
+      }
+      .printable-content-container h2, .printable-content-container h3 {
+        background-image: none !important;
+        -webkit-background-clip: initial !important;
+        background-clip: initial !important;
+        color: #000 !important;
+        page-break-after: avoid;
+      }
+       .printable-content-container [class*="bg-slate-"], .printable-content-container [class*="bg-orange-"], .printable-content-container [class*="bg-green-"], .printable-content-container [class*="bg-yellow-"], .printable-content-container [class*="bg-red-"] {
+        background-color: transparent !important;
+       }
+       .printable-content-container .text-orange-400, .printable-content-container .text-orange-500 {
+        color: #000 !important;
+       }
+       .printable-content-container svg {
+        display: none; /* Hide icons by default unless specified */
+       }
+       .printable-content-container .world-map-container svg {
+        display: block; /* Show the map */
+       }
+       .printable-content-container .risk-badge {
+         border: 1px solid #ccc;
+         padding: 2px 4px;
+         border-radius: 4px;
+       }
+       .printable-content-container .shipment-stat-card {
+         border: 1px solid #ccc;
+       }
+    }
+  </style>
+<link rel="stylesheet" href="/index.css">
+</head>
+  <body class="bg-slate-900">
+    <div id="root"></div>
+    <script type="module" src="/index.tsx"></script>
+  </body>
+</html>

@@ -1,0 +1,5 @@
+{
+  "name": "USA Importer Intel",
+  "description": "An application to search for detailed information about USA-based importers, including their latest shipment details, commodities, and contact information, powered by AI.",
+  "requestFramePermissions": []
+}
