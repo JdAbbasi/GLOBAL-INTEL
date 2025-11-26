@@ -232,15 +232,15 @@ const ShipmentVolumeChart: React.FC<{ history: ShipmentVolume[] }> = ({ history 
     
     // Sort data just in case it's not
     const sortedHistory = [...history].sort((a, b) => a.year - b.year);
+    const maxActualVolume = Math.max(...sortedHistory.map(h => h.volume), 0);
+    const maxVolume = maxActualVolume * 1.1; // Add 10% headroom
 
     const width = 500;
-    const height = 200;
-    const padding = { top: 20, right: 20, bottom: 30, left: 60 };
+    const height = 220;
+    const padding = { top: 30, right: 20, bottom: 30, left: 60 };
 
     const chartWidth = width - padding.left - padding.right;
     const chartHeight = height - padding.top - padding.bottom;
-
-    const maxVolume = Math.max(...sortedHistory.map(h => h.volume), 0) * 1.1; // Add 10% headroom
 
     const yScale = (volume: number) => {
         return padding.top + chartHeight - (volume / maxVolume) * chartHeight;
@@ -254,6 +254,14 @@ const ShipmentVolumeChart: React.FC<{ history: ShipmentVolume[] }> = ({ history 
     
     const getX = (index: number) => {
         return padding.left + (slotWidth * index) + (slotWidth - barWidth) / 2;
+    };
+
+    const getBarColor = (volume: number) => {
+        if (maxActualVolume === 0) return "#f97316";
+        const percentage = volume / maxActualVolume;
+        if (percentage >= 0.75) return "#c2410c"; // orange-700 (High)
+        if (percentage >= 0.4) return "#f97316"; // orange-500 (Medium)
+        return "#fdba74"; // orange-300 (Low)
     };
 
     const handleMouseMove = (event: React.MouseEvent<SVGSVGElement>) => {
@@ -310,7 +318,10 @@ const ShipmentVolumeChart: React.FC<{ history: ShipmentVolume[] }> = ({ history 
 
     return (
         <div className="bg-slate-900/50 p-4 rounded-lg mb-4">
-            <h4 className="text-lg font-semibold text-slate-300 mb-4">Annual Shipment Volume (TEUs)</h4>
+            <h4 className="text-lg font-semibold text-slate-300 mb-4 flex items-center gap-2">
+                <ChartBarIcon className="w-5 h-5 text-orange-400" />
+                Annual Shipment Volume (TEUs)
+            </h4>
             <div className="relative">
                 <svg
                     ref={svgRef}
@@ -347,6 +358,9 @@ const ShipmentVolumeChart: React.FC<{ history: ShipmentVolume[] }> = ({ history 
                     {/* Bars */}
                     {sortedHistory.map((d, i) => {
                          const barHeight = y0 - yScale(d.volume);
+                         const barColor = getBarColor(d.volume);
+                         const isHovered = tooltipData?.year === d.year;
+                         
                          return (
                             <rect
                                 key={i}
@@ -354,9 +368,14 @@ const ShipmentVolumeChart: React.FC<{ history: ShipmentVolume[] }> = ({ history 
                                 y={yScale(d.volume)}
                                 width={barWidth}
                                 height={barHeight}
-                                fill="#f97316"
-                                className="hover:opacity-80 transition-opacity duration-200 animate-grow-bar"
-                                style={{ transformOrigin: `center ${y0}px` }}
+                                fill={barColor}
+                                rx={2}
+                                opacity={isHovered ? 1 : 0.85}
+                                className="transition-all duration-200 animate-grow-bar"
+                                style={{ 
+                                    transformOrigin: `center ${y0}px`,
+                                    filter: isHovered ? 'brightness(1.1)' : 'none'
+                                }}
                             />
                          );
                     })}
@@ -393,18 +412,37 @@ const ShipmentVolumeChart: React.FC<{ history: ShipmentVolume[] }> = ({ history 
                 {/* HTML Tooltip */}
                 {tooltipData && (
                     <div
-                        className="absolute bg-slate-700 text-white text-xs font-bold px-3 py-2 rounded-md pointer-events-none shadow-lg transition-transform duration-100 z-10"
+                        className="absolute bg-slate-800 text-white p-3 rounded-lg pointer-events-none shadow-xl border border-slate-600 z-10"
                         style={{
                             left: `${tooltipData.x / width * 100}%`,
                             top: `${tooltipData.y / height * 100}%`,
-                            transform: `translate(-50%, -120%)`
+                            transform: `translate(-50%, -130%)`
                         }}
                     >
-                        <div className="font-mono text-base">{tooltipData.volume.toLocaleString()} <span className="text-xs text-slate-300">TEUs</span></div>
-                        <div className="text-slate-400">{tooltipData.year}</div>
-                        <div className="absolute top-full left-1/2 -translate-x-1/2 w-0 h-0 border-x-4 border-x-transparent border-t-4 border-t-slate-700"></div>
+                        <div className="text-xs text-slate-400 font-bold mb-1">{tooltipData.year}</div>
+                        <div className="font-mono text-lg font-bold text-orange-400 leading-none">
+                            {tooltipData.volume.toLocaleString()}
+                            <span className="text-xs text-slate-500 ml-1 font-sans font-normal">TEUs</span>
+                        </div>
+                        <div className="absolute top-full left-1/2 -translate-x-1/2 w-0 h-0 border-x-8 border-x-transparent border-t-8 border-t-slate-600"></div>
                     </div>
                 )}
+            </div>
+            
+            {/* Chart Legend */}
+            <div className="flex items-center justify-center gap-6 mt-4 pt-4 border-t border-slate-800 text-xs text-slate-400">
+                <div className="flex items-center gap-2">
+                    <span className="w-3 h-3 rounded-sm bg-orange-300"></span>
+                    <span>Low Volume</span>
+                </div>
+                <div className="flex items-center gap-2">
+                    <span className="w-3 h-3 rounded-sm bg-orange-500"></span>
+                    <span>Avg Volume</span>
+                </div>
+                <div className="flex items-center gap-2">
+                    <span className="w-3 h-3 rounded-sm bg-orange-700"></span>
+                    <span>Peak Volume</span>
+                </div>
             </div>
         </div>
     );
