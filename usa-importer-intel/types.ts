@@ -1,5 +1,4 @@
 
-
 export interface RiskAssessment {
   financialStability: string;
   regulatoryCompliance: string;
@@ -29,21 +28,31 @@ export interface ContactInfo {
 }
 
 export interface ImporterSummary {
-    importerName: string;
-    location: string;
-    primaryCommodities: string;
-    lastShipmentDate: string;
-    contactInformation?: string;
+  importerName: string;
+  location: string;
+  primaryCommodities: string;
+  lastShipmentDate: string;
+  contactInformation?: string;
+  source?: string;
+  raw?: any;
 }
 
 export interface ShipmentEvent {
   date: string;
-  event: string;
+  shipper: string;
+  origin: string;
+  portOfDischarge: string;
+  commodity: string;
+  volume: string; // TEUs, Weight, or Quantity
+  carrier?: string;
+  hsCode?: string;
+  bolNumber?: string;
+  source?: string;
 }
 
 export interface ShipmentVolume {
   year: number;
-  volume: number; // in TEUs or other unit
+  volume: number;
 }
 
 export interface ShipmentCounts {
@@ -66,14 +75,13 @@ export interface ParsedImporterData {
   riskAssessment: RiskAssessment;
   topTradePartners: TradePartner[];
   topCommodityFlows: CommodityFlow[];
+  sources?: Source[];
 }
 
 export interface DetailedImporterResult {
   parsedData: ParsedImporterData;
 }
 
-
-// FIX: Added the missing 'Source' type definition to resolve compilation errors.
 export interface Source {
   uri: string;
   title: string;
