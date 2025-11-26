@@ -1,7 +1,7 @@
 
 import React, { useState, useMemo, useRef, useEffect, useLayoutEffect } from 'react';
 import type { ParsedImporterData, RiskAssessment, TradePartner, CommodityFlow, ContactInfo, ImporterSummary, ShipmentEvent, ShipmentVolume, ShipmentCounts } from '../types';
-import { InfoIcon, ShipIcon, PhoneIcon, BellIcon, ShieldCheckIcon, CheckCircleIcon, ArrowDownTrayIcon, UsersIcon, ChevronDownIcon, SearchIcon, ArrowUpTrayIcon, EnvelopeIcon, ClipboardIcon, MapPinIcon, CalendarDaysIcon, GlobeIcon, ChartBarIcon, ArrowTrendingUpIcon, ArrowTrendingDownIcon, MinusIcon, BoxIcon, DocumentTextIcon, ArrowPathIcon, FunnelIcon, ArrowsUpDownIcon, CodeBracketIcon, PrinterIcon } from './icons';
+import { InfoIcon, ShipIcon, PhoneIcon, BellIcon, ShieldCheckIcon, CheckCircleIcon, ArrowDownTrayIcon, UsersIcon, ChevronDownIcon, SearchIcon, ArrowUpTrayIcon, EnvelopeIcon, ClipboardIcon, MapPinIcon, CalendarDaysIcon, GlobeIcon, ChartBarIcon, ArrowTrendingUpIcon, ArrowTrendingDownIcon, MinusIcon, BoxIcon, DocumentTextIcon, ArrowPathIcon, FunnelIcon, ArrowsUpDownIcon, CodeBracketIcon, PrinterIcon, BuildingOfficeIcon } from './icons';
 import { searchSimilarImporters } from '../services/geminiService';
 import { Spinner } from './Spinner';
 import { WorldMap } from './WorldMap';
@@ -210,12 +210,12 @@ const ShipmentStats: React.FC<{ counts: ShipmentCounts }> = ({ counts }) => {
     return (
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
             {stats.map(stat => (
-                <div key={stat.label} className="bg-slate-900/50 p-4 rounded-lg text-center shipment-stat-card">
-                    <p className="text-sm font-semibold text-slate-400">{stat.label}</p>
-                    <p className="text-3xl font-bold text-orange-400 mt-1">
+                <div key={stat.label} className="bg-slate-900/50 p-4 rounded-lg text-center shipment-stat-card border border-slate-700/50">
+                    <p className="text-xs font-bold uppercase tracking-wider text-slate-500">{stat.label}</p>
+                    <p className="text-3xl font-bold text-orange-400 mt-2">
                         {typeof stat.value === 'number' ? stat.value.toLocaleString() : stat.value}
                     </p>
-                    <p className="text-xs text-slate-500">Shipments</p>
+                    <p className="text-xs text-slate-500 mt-1">Total Shipments</p>
                 </div>
             ))}
         </div>
@@ -656,30 +656,8 @@ const ImportHistory: React.FC<{ history: ShipmentEvent[] }> = ({ history }) => {
     const [filterText, setFilterText] = useState('');
 
     if (!history || history.length === 0) {
-        return <div className="text-slate-500 italic mt-4">No specific import events available.</div>;
+        return <div className="text-slate-500 italic mt-4">No specific Bill of Lading records available.</div>;
     }
-
-    const parseShipmentEvent = (eventText: string) => {
-        const text = eventText.replace(/\.$/, '');
-
-        // Enhanced regex patterns
-        const volumeRegex = /(\d[\d,.]*\s*(?:TEUs?|containers?|units?|kgs?|kg|tons?|ton|lbs?|packages?|shipments?|cartons?|pieces?))/i;
-        const originRegex = /(?:from|originating from|originating in)\s+([A-Z][a-zA-Z\s,.-]+?)(?=\s+(?:containing|of|consisting|by|supplier|via)|\.|$)/i;
-        const commodityRegex = /(?:of|containing|consisting of)\s+([a-zA-Z0-9\s,()-]+?)(?=\s+(?:from|via|originating|by|supplier)|\.|$)/i;
-        const supplierRegex = /(?:supplier|by|manufactured by)\s+([A-Z][a-zA-Z0-9\s,.]+?)(?=\s+(?:via|from|of)|\.|$)/i;
-
-        const volumeMatch = text.match(volumeRegex);
-        const originMatch = text.match(originRegex);
-        const commodityMatch = text.match(commodityRegex);
-        const supplierMatch = text.match(supplierRegex);
-
-        return {
-            volume: volumeMatch ? volumeMatch[1].trim() : null,
-            origin: originMatch ? originMatch[1].trim() : null,
-            commodity: commodityMatch ? commodityMatch[1].trim() : null,
-            supplier: supplierMatch ? supplierMatch[1].trim() : null,
-        };
-    };
 
     const processedHistory = useMemo(() => {
         let data = [...history];
@@ -687,8 +665,13 @@ const ImportHistory: React.FC<{ history: ShipmentEvent[] }> = ({ history }) => {
         if (filterText.trim()) {
             const lower = filterText.toLowerCase().trim();
             data = data.filter(item => 
-                item.event.toLowerCase().includes(lower) || 
-                item.date.includes(lower)
+                item.shipper?.toLowerCase().includes(lower) || 
+                item.origin?.toLowerCase().includes(lower) ||
+                item.commodity?.toLowerCase().includes(lower) ||
+                item.portOfDischarge?.toLowerCase().includes(lower) ||
+                item.carrier?.toLowerCase().includes(lower) ||
+                item.hsCode?.toLowerCase().includes(lower) ||
+                item.bolNumber?.toLowerCase().includes(lower)
             );
         }
 
@@ -706,7 +689,7 @@ const ImportHistory: React.FC<{ history: ShipmentEvent[] }> = ({ history }) => {
 
     return (
         <div className="mt-6">
-             <div className="flex flex-col sm:flex-row gap-4 mb-6">
+             <div className="flex flex-col sm:flex-row gap-4 mb-6 no-print">
                  {/* Search Input */}
                  <div className="relative flex-1 w-full">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -715,7 +698,7 @@ const ImportHistory: React.FC<{ history: ShipmentEvent[] }> = ({ history }) => {
                     <input
                         type="text"
                         className="bg-slate-900/50 border border-slate-700 text-slate-200 text-sm rounded-lg focus:ring-orange-500 focus:border-orange-500 block w-full pl-10 p-2.5 placeholder-slate-500 transition-all focus:bg-slate-800"
-                        placeholder="Filter by keyword, commodity, or origin..."
+                        placeholder="Filter by shipper, port, carrier, BOL #..."
                         value={filterText}
                         onChange={(e) => setFilterText(e.target.value)}
                     />
@@ -730,56 +713,99 @@ const ImportHistory: React.FC<{ history: ShipmentEvent[] }> = ({ history }) => {
                  </button>
             </div>
 
-            <div className="grid md:grid-cols-1 lg:grid-cols-2 gap-4">
-                {processedHistory.map((item, index) => {
-                    const { volume, origin, commodity, supplier } = parseShipmentEvent(item.event);
-                    return (
-                        <div key={index} className="bg-slate-900/50 p-5 rounded-lg border border-slate-700/50 hover:border-orange-500/30 transition-all duration-300 hover:shadow-lg hover:shadow-orange-900/10 group flex flex-col">
-                            <div className="flex justify-between items-center mb-3">
-                                <p className="text-sm font-semibold text-orange-400 flex items-center gap-2 bg-orange-900/20 px-2 py-1 rounded">
-                                    <CalendarDaysIcon className="w-4 h-4" />
-                                    {item.date}
-                                </p>
-                            </div>
-                            
-                            <div className="flex-1">
-                                 <div className="space-y-2.5 text-sm">
-                                    {commodity ? (
-                                        <div className="flex items-start justify-between border-b border-slate-800/50 pb-2">
-                                            <span className="text-slate-500 flex items-center gap-2"><BoxIcon className="w-4 h-4" /> Commodity</span>
-                                            <span className="text-slate-200 font-medium text-right pl-4">{commodity}</span>
-                                        </div>
-                                    ) : (
-                                         <div className="flex items-start gap-2 text-slate-400 italic pb-2 border-b border-slate-800/50">
-                                            <BoxIcon className="w-4 h-4 mt-0.5" />
-                                            <span>{item.event}</span>
-                                         </div>
-                                    )}
-
-                                    {origin && (
-                                        <div className="flex items-start justify-between">
-                                            <span className="text-slate-500 flex items-center gap-2"><GlobeIcon className="w-4 h-4" /> Origin</span>
-                                            <span className="text-slate-300 text-right pl-4">{origin}</span>
-                                        </div>
-                                    )}
-                                    {volume && (
-                                        <div className="flex items-start justify-between">
-                                            <span className="text-slate-500 flex items-center gap-2"><ChartBarIcon className="w-4 h-4" /> Volume</span>
-                                            <span className="text-slate-300 text-right pl-4">{volume}</span>
-                                        </div>
-                                    )}
-                                    {supplier && (
-                                        <div className="flex items-start justify-between">
-                                            <span className="text-slate-500 flex items-center gap-2"><UsersIcon className="w-4 h-4" /> Supplier</span>
-                                            <span className="text-slate-300 text-right pl-4">{supplier}</span>
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-                        </div>
-                    );
-                })}
+            {/* Desktop Table View */}
+            <div className="hidden md:block overflow-x-auto rounded-lg border border-slate-700/50">
+                <table className="w-full text-sm text-left text-slate-300">
+                    <thead className="text-xs text-slate-400 uppercase bg-slate-800/80">
+                        <tr>
+                            <th scope="col" className="px-6 py-3 whitespace-nowrap">Arrival Date</th>
+                            <th scope="col" className="px-6 py-3">Foreign Shipper</th>
+                            <th scope="col" className="px-6 py-3">Origin</th>
+                            <th scope="col" className="px-6 py-3">Port of Discharge</th>
+                            <th scope="col" className="px-6 py-3">Carrier / Vessel</th>
+                            <th scope="col" className="px-6 py-3 whitespace-nowrap">BOL #</th>
+                            <th scope="col" className="px-6 py-3">Volume</th>
+                            <th scope="col" className="px-6 py-3">Commodity / HS Code</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {processedHistory.map((item, index) => (
+                            <tr key={index} className="bg-slate-900/30 border-b border-slate-800 hover:bg-slate-800/50 transition-colors">
+                                <td className="px-6 py-4 font-mono text-orange-400 whitespace-nowrap">{item.date}</td>
+                                <td className="px-6 py-4 font-medium text-slate-200">{item.shipper || 'N/A'}</td>
+                                <td className="px-6 py-4">
+                                    {item.origin ? (
+                                        <span className="flex items-center gap-2">
+                                            <GlobeIcon className="w-4 h-4 text-slate-500" />
+                                            {item.origin}
+                                        </span>
+                                    ) : 'N/A'}
+                                </td>
+                                <td className="px-6 py-4">
+                                    {item.portOfDischarge ? (
+                                        <span className="bg-slate-800 text-blue-300 px-2 py-1 rounded text-xs border border-blue-900/50 whitespace-nowrap">
+                                            {item.portOfDischarge}
+                                        </span>
+                                    ) : 'N/A'}
+                                </td>
+                                <td className="px-6 py-4 text-slate-300">{item.carrier || 'N/A'}</td>
+                                <td className="px-6 py-4 font-mono text-xs text-slate-400">{item.bolNumber || 'N/A'}</td>
+                                <td className="px-6 py-4 font-mono text-xs whitespace-nowrap">{item.volume || 'N/A'}</td>
+                                <td className="px-6 py-4 text-xs text-slate-400 max-w-xs">
+                                    <div className="font-semibold text-slate-300 truncate" title={item.commodity}>{item.commodity}</div>
+                                    {item.hsCode && <div className="text-orange-500/80 font-mono mt-1">HS: {item.hsCode}</div>}
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
             </div>
+
+            {/* Mobile Card View */}
+            <div className="md:hidden space-y-4">
+                {processedHistory.map((item, index) => (
+                    <div key={index} className="bg-slate-900/50 p-4 rounded-lg border border-slate-700/50 flex flex-col gap-3">
+                         <div className="flex justify-between items-start">
+                            <span className="text-orange-400 font-mono text-sm bg-orange-900/20 px-2 py-0.5 rounded">{item.date}</span>
+                            <span className="bg-slate-800 text-blue-300 px-2 py-0.5 rounded text-xs border border-blue-900/50">{item.portOfDischarge || 'Unknown Port'}</span>
+                         </div>
+                         <div>
+                             <p className="text-xs text-slate-500 uppercase">Shipper</p>
+                             <p className="font-semibold text-slate-200">{item.shipper || 'N/A'}</p>
+                         </div>
+                         <div className="grid grid-cols-2 gap-2">
+                             <div>
+                                <p className="text-xs text-slate-500 uppercase">Origin</p>
+                                <p className="text-sm text-slate-300">{item.origin || 'N/A'}</p>
+                             </div>
+                             <div className="text-right">
+                                <p className="text-xs text-slate-500 uppercase">Volume</p>
+                                <p className="text-sm text-slate-300 font-mono">{item.volume || 'N/A'}</p>
+                             </div>
+                             {item.carrier && (
+                                 <div className="col-span-2">
+                                    <p className="text-xs text-slate-500 uppercase">Carrier</p>
+                                    <p className="text-sm text-slate-300">{item.carrier}</p>
+                                 </div>
+                             )}
+                             {item.bolNumber && (
+                                 <div className="col-span-2">
+                                    <p className="text-xs text-slate-500 uppercase">BOL Number</p>
+                                    <p className="text-sm text-slate-300 font-mono">{item.bolNumber}</p>
+                                 </div>
+                             )}
+                         </div>
+                         <div className="pt-2 border-t border-slate-800">
+                            <div className="flex justify-between mb-1">
+                                <p className="text-xs text-slate-500 uppercase">Commodity</p>
+                                {item.hsCode && <span className="text-xs font-mono text-slate-500">HS: {item.hsCode}</span>}
+                            </div>
+                            <p className="text-sm text-slate-400">{item.commodity}</p>
+                         </div>
+                    </div>
+                ))}
+            </div>
+
              {processedHistory.length === 0 && (
                 <div className="text-center py-12 text-slate-500 bg-slate-900/20 rounded-lg border border-slate-800 border-dashed">
                     <FunnelIcon className="w-10 h-10 mx-auto mb-3 opacity-30" />
@@ -872,7 +898,7 @@ export const ImporterCard: React.FC<ImporterCardProps> = ({ data, onSubscribe, o
   return (
     <div className="bg-gradient-to-br from-slate-800 to-slate-900">
       {/* HEADER */}
-      <div className="p-4 sm:p-6 md:p-8 border-b border-slate-700/50 bg-slate-800/20">
+      <div className="p-4 sm:p-6 md:p-8 border-b border-slate-700/50 bg-slate-800/20 no-print">
         <div className="flex flex-col md:flex-row justify-between md:items-start gap-4">
             <div>
                 <h2 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-slate-200 to-slate-400 text-transparent bg-clip-text pr-4">
@@ -885,7 +911,7 @@ export const ImporterCard: React.FC<ImporterCardProps> = ({ data, onSubscribe, o
                     </div>
                 </div>
             </div>
-            <div className="flex items-center gap-2 flex-shrink-0 no-print self-end md:self-auto">
+            <div className="flex items-center gap-2 flex-shrink-0 self-end md:self-auto">
                 <button
                     onClick={() => onRefresh(importerName)}
                     disabled={isRefreshing}
@@ -895,6 +921,16 @@ export const ImporterCard: React.FC<ImporterCardProps> = ({ data, onSubscribe, o
                     <ArrowPathIcon className={`w-6 h-6 ${isRefreshing ? 'animate-spin' : ''}`} />
                 </button>
                 
+                {/* Dedicated PDF Button */}
+                <button
+                    onClick={onExportPDF}
+                    className="p-2 rounded-full text-slate-400 hover:bg-slate-700 hover:text-orange-400 transition-colors focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 focus:ring-offset-slate-800"
+                    title="Export to PDF"
+                    aria-label="Export to PDF"
+                >
+                    <PrinterIcon className="w-6 h-6" />
+                </button>
+
                 {/* Export Dropdown */}
                 <div className="relative">
                     <button
@@ -920,10 +956,6 @@ export const ImporterCard: React.FC<ImporterCardProps> = ({ data, onSubscribe, o
                                 <button onClick={() => { onExport(); setIsExportOpen(false); }} className="flex items-center gap-3 px-4 py-3 text-sm text-slate-200 hover:bg-slate-600 w-full text-left transition-colors" role="menuitem">
                                     <DocumentTextIcon className="w-5 h-5 text-orange-400" />
                                     <span>Export as CSV</span>
-                                </button>
-                                <button onClick={() => { onExportPDF(); setIsExportOpen(false); }} className="flex items-center gap-3 px-4 py-3 text-sm text-slate-200 hover:bg-slate-600 w-full text-left transition-colors" role="menuitem">
-                                    <PrinterIcon className="w-5 h-5 text-orange-400" />
-                                    <span>Print / PDF</span>
                                 </button>
                             </div>
                         </div>
@@ -970,6 +1002,24 @@ export const ImporterCard: React.FC<ImporterCardProps> = ({ data, onSubscribe, o
         </div>
       </div>
 
+      {/* PRINT-ONLY HEADER */}
+      <div className="hidden print:block p-8 border-b-2 border-black mb-8 bg-white">
+          <div className="flex justify-between items-start">
+             <div>
+                <h1 className="text-4xl font-extrabold text-black uppercase tracking-tight">Importer Intelligence Report</h1>
+                <p className="text-gray-500 mt-2 font-medium">Confidential Trade Data Analysis</p>
+             </div>
+             <div className="text-right">
+                <p className="text-sm text-gray-600 font-mono">Generated: {new Date().toLocaleDateString()}</p>
+                <p className="text-sm text-gray-600 font-mono">Source: Global AI Importer Intel</p>
+             </div>
+          </div>
+          <div className="mt-8">
+             <h2 className="text-3xl font-bold text-black">{importerName}</h2>
+             <p className="text-gray-700 text-lg mt-1">{data.location}</p>
+          </div>
+      </div>
+
       {/* MAIN CONTENT */}
       <div className="p-4 sm:p-6 md:p-8">
         {/* TOP GRID */}
@@ -1006,7 +1056,7 @@ export const ImporterCard: React.FC<ImporterCardProps> = ({ data, onSubscribe, o
         {/* FULL-WIDTH SECTIONS */}
         <div className="mt-10 space-y-10">
           <div className="pt-10 border-t border-slate-700/50 avoid-break">
-            <Section icon={<ShipIcon className="w-7 h-7 text-orange-400" />} title="Import History & Shipment Activity">
+            <Section icon={<ShipIcon className="w-7 h-7 text-orange-400" />} title="CBP/AMS Import History">
                 {isLoading ? (
                     <div className="space-y-4">
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
@@ -1023,7 +1073,15 @@ export const ImporterCard: React.FC<ImporterCardProps> = ({ data, onSubscribe, o
                         {data.shipmentCounts && <ShipmentStats counts={data.shipmentCounts} />}
                         <ShipmentVolumeChart history={data.shipmentVolumeHistory} />
                         <p className="text-slate-400 whitespace-pre-wrap">{data.shipmentActivity}</p>
-                        <ImportHistory history={data.shipmentHistory} />
+                        
+                        {/* New Bill of Lading / AMS Table View */}
+                        <div className="mt-8">
+                            <h4 className="text-lg font-semibold text-slate-300 mb-4 flex items-center gap-2">
+                                <BuildingOfficeIcon className="w-5 h-5 text-orange-400" />
+                                Bill of Lading & Customs Data
+                            </h4>
+                            <ImportHistory history={data.shipmentHistory} />
+                        </div>
                     </div>
                 )}
             </Section>
