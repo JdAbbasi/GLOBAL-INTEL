@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
   <head>
@@ -15,7 +16,11 @@
     "react/": "https://aistudiocdn.com/react@^19.2.0/",
     "react": "https://aistudiocdn.com/react@^19.2.0",
     "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
-    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.29.0"
+    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.29.0",
+    "axios": "https://aistudiocdn.com/axios@^1.13.2",
+    "cheerio": "https://aistudiocdn.com/cheerio@^1.1.2",
+    "p-queue": "https://aistudiocdn.com/p-queue@^9.0.1",
+    "puppeteer": "https://aistudiocdn.com/puppeteer@^24.31.0"
   }
 }
 </script>
@@ -41,27 +46,30 @@
     @media print {
       @page {
         size: A4;
-        margin: 1.5cm;
+        margin: 1cm;
       }
       body, html {
         background: #fff !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
       }
-      /* Hide everything except the modal content */
+      /* Hide everything in the root except the modal */
       body > #root > div > *:not(.printable-modal-wrapper) {
-        display: none;
+        display: none !important;
       }
+      
       .printable-modal-wrapper {
-        position: static;
-        display: block;
-        width: 100%;
-        height: auto;
-        inset: auto;
-        background: transparent !important;
+        position: static !important;
+        display: block !important;
+        width: 100% !important;
+        height: auto !important;
+        inset: auto !important;
+        background: white !important;
         backdrop-filter: none !important;
         padding: 0 !important;
-        justify-content: flex-start;
-        align-items: flex-start;
+        overflow: visible !important;
       }
+      
       .printable-content-container {
         position: static !important;
         margin: 0 !important;
@@ -70,58 +78,81 @@
         max-height: none !important;
         box-shadow: none !important;
         border: none !important;
-        background: #fff !important;
-        overflow-y: visible !important;
-        color-adjust: exact;
-        -webkit-print-color-adjust: exact;
+        background: white !important;
+        overflow: visible !important;
+        transform: none !important;
+        color: black !important;
       }
-      /* Hide non-printable elements within the card */
+      
+      /* Hide utility classes marked as no-print */
       .no-print {
         display: none !important;
       }
+      
+      /* Force print block items to show */
+      .print\:block {
+        display: block !important;
+      }
+      
       .avoid-break {
         page-break-inside: avoid;
       }
-      /* Reset text and background colors for printing */
+
+      /* Adjust colors for print legibility */
       .printable-content-container * {
-        background-color: transparent !important;
-        box-shadow: none !important;
         text-shadow: none !important;
-        border-color: #ccc !important;
       }
-      .printable-content-container, .printable-content-container [class*="text-"] {
-        color: #000 !important;
+      
+      /* Invert dark text to black/dark gray for print */
+      .printable-content-container .text-slate-100,
+      .printable-content-container .text-slate-200,
+      .printable-content-container .text-slate-300,
+      .printable-content-container .text-slate-400,
+      .printable-content-container .text-white {
+        color: #1f2937 !important; /* gray-800 */
       }
-      .printable-content-container h2, .printable-content-container h3 {
-        background-image: none !important;
-        -webkit-background-clip: initial !important;
-        background-clip: initial !important;
-        color: #000 !important;
-        page-break-after: avoid;
+      
+      /* Keep orange highlights but make them readable or darker */
+      .printable-content-container .text-orange-400,
+      .printable-content-container .text-orange-500 {
+        color: #ea580c !important; /* orange-600 */
       }
-       .printable-content-container [class*="bg-slate-"], .printable-content-container [class*="bg-orange-"], .printable-content-container [class*="bg-green-"], .printable-content-container [class*="bg-yellow-"], .printable-content-container [class*="bg-red-"] {
+      
+      /* Borders */
+      .printable-content-container .border-slate-700, 
+      .printable-content-container .border-slate-800 {
+        border-color: #e5e7eb !important; /* gray-200 */
+      }
+      
+      /* Remove dark backgrounds */
+      .printable-content-container [class*="bg-slate-"],
+      .printable-content-container [class*="bg-gradient-"] {
+        background: transparent !important;
         background-color: transparent !important;
-       }
-       .printable-content-container .text-orange-400, .printable-content-container .text-orange-500 {
-        color: #000 !important;
-       }
-       .printable-content-container svg {
-        display: none; /* Hide icons by default unless specified */
-       }
-       .printable-content-container .world-map-container svg {
-        display: block; /* Show the map */
-       }
-       .printable-content-container .risk-badge {
-         border: 1px solid #ccc;
-         padding: 2px 4px;
-         border-radius: 4px;
-       }
-       .printable-content-container .shipment-stat-card {
-         border: 1px solid #ccc;
-       }
+      }
+      
+      /* Show SVG icons */
+      .printable-content-container svg {
+        display: inline-block;
+        color: #4b5563 !important; /* gray-600 */
+      }
+      
+      /* Specific override for badges/chips */
+      .printable-content-container .bg-slate-800,
+      .printable-content-container .bg-slate-900 {
+        background-color: #f3f4f6 !important; /* gray-100 */
+        border: 1px solid #d1d5db !important;
+      }
+      
+      /* Make charts visible */
+      .printable-content-container rect[fill="#f97316"] {
+         fill: #ea580c !important;
+      }
+      .printable-content-container path[stroke="#f97316"] {
+         stroke: #ea580c !important;
+      }
     }
   </style>
-<link rel="stylesheet" href="/index.css">
 </head>
   <body class="bg-slate-900">
     <div id="root"></div>
