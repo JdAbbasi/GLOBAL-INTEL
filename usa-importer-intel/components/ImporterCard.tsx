@@ -1,7 +1,7 @@
 
 import React, { useState, useMemo, useRef, useEffect, useLayoutEffect } from 'react';
-import type { ParsedImporterData, RiskAssessment, TradePartner, CommodityFlow, ContactInfo, ImporterSummary, ShipmentEvent, ShipmentVolume, ShipmentCounts } from '../types';
-import { InfoIcon, ShipIcon, PhoneIcon, BellIcon, ShieldCheckIcon, CheckCircleIcon, ArrowDownTrayIcon, UsersIcon, ChevronDownIcon, SearchIcon, ArrowUpTrayIcon, EnvelopeIcon, ClipboardIcon, MapPinIcon, CalendarDaysIcon, GlobeIcon, ChartBarIcon, ArrowTrendingUpIcon, ArrowTrendingDownIcon, MinusIcon, BoxIcon, DocumentTextIcon, ArrowPathIcon, FunnelIcon, ArrowsUpDownIcon, CodeBracketIcon, PrinterIcon, BuildingOfficeIcon } from './icons';
+import type { ParsedImporterData, RiskAssessment, TradePartner, CommodityFlow, ContactInfo, ImporterSummary, ShipmentEvent, ShipmentVolume, ShipmentCounts, TopSupplier } from '../types';
+import { InfoIcon, ShipIcon, PhoneIcon, BellIcon, ShieldCheckIcon, CheckCircleIcon, ArrowDownTrayIcon, UsersIcon, ChevronDownIcon, SearchIcon, ArrowUpTrayIcon, EnvelopeIcon, ClipboardIcon, MapPinIcon, CalendarDaysIcon, GlobeIcon, ChartBarIcon, ArrowTrendingUpIcon, ArrowTrendingDownIcon, MinusIcon, BoxIcon, DocumentTextIcon, ArrowPathIcon, FunnelIcon, ArrowsUpDownIcon, CodeBracketIcon, PrinterIcon, BuildingOfficeIcon, ArrowLeftIcon } from './icons';
 import { searchSimilarImporters } from '../services/geminiService';
 import { Spinner } from './Spinner';
 import { WorldMap } from './WorldMap';
@@ -14,6 +14,7 @@ interface ImporterCardProps {
   onExportJSON: () => void;
   onSearchSimilar: (name: string) => void;
   onRefresh: (name: string) => void;
+  onClose?: () => void;
   isRefreshing?: boolean;
 }
 
@@ -92,7 +93,7 @@ const ContactForm: React.FC = () => {
                 </p>
                 <button 
                     onClick={() => { setIsSubmitted(false); setEmail(''); setMessage(''); }}
-                    className="mt-6 text-sm text-orange-400 hover:text-orange-300 underline"
+                    className="mt-6 text-sm text-orange-400 hover:text-blue-400 underline"
                 >
                     Send another message
                 </button>
@@ -141,7 +142,7 @@ const ContactForm: React.FC = () => {
             </div>
             <button 
                 type="submit" 
-                className="w-full bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-500 hover:to-orange-400 text-white font-bold py-3 px-4 rounded-lg transition-all shadow-lg shadow-orange-900/20 disabled:opacity-70 disabled:cursor-not-allowed flex justify-center items-center gap-2"
+                className="w-full bg-gradient-to-r from-orange-600 to-orange-500 hover:from-blue-600 hover:to-blue-500 text-white font-bold py-3 px-4 rounded-lg transition-all shadow-lg shadow-orange-900/20 disabled:opacity-70 disabled:cursor-not-allowed flex justify-center items-center gap-2"
                 disabled={isSubmitting}
             >
                 {isSubmitting ? (
@@ -544,6 +545,37 @@ const CommodityDetailsList: React.FC<{ commodities: CommodityFlow[] }> = ({ comm
     );
 };
 
+const ShipperInformationList: React.FC<{ suppliers: TopSupplier[] }> = ({ suppliers }) => {
+    if (!suppliers || suppliers.length === 0) {
+        return <div className="text-slate-500 italic">No specific shipper details available.</div>;
+    }
+
+    return (
+        <div className="grid md:grid-cols-2 gap-4">
+             {suppliers.map((supplier, index) => (
+                 <div key={index} className="bg-slate-900/50 p-4 rounded-lg border border-slate-700/50">
+                     <div className="flex items-center justify-between mb-2">
+                         <h4 className="font-bold text-slate-200">{supplier.name}</h4>
+                         {supplier.lastShipment && <span className="text-xs text-orange-400 bg-orange-900/20 px-2 py-0.5 rounded">{supplier.lastShipment}</span>}
+                     </div>
+                     <div className="text-sm text-slate-400 space-y-1">
+                         <div className="flex items-center gap-2">
+                             <MapPinIcon className="w-4 h-4 text-slate-500" />
+                             <span>{supplier.location}</span>
+                         </div>
+                         {supplier.product && (
+                             <div className="flex items-center gap-2">
+                                 <BoxIcon className="w-4 h-4 text-slate-500" />
+                                 <span>{supplier.product}</span>
+                             </div>
+                         )}
+                     </div>
+                 </div>
+             ))}
+        </div>
+    );
+};
+
 
 const formatContactNode = (contact: ContactInfo | string): React.ReactNode => {
     if (typeof contact === 'string') {
@@ -588,7 +620,7 @@ const formatContactNode = (contact: ContactInfo | string): React.ReactNode => {
                 <div className="flex items-start gap-3">
                     <EnvelopeIcon className={`w-5 h-5 mt-0.5 flex-shrink-0 ${hasEmail ? 'text-slate-400' : 'text-slate-600'}`} />
                     {hasEmail ? (
-                        <a href={`mailto:${contact.email}`} className="text-orange-400 hover:underline break-all">
+                        <a href={`mailto:${contact.email}`} className="text-orange-400 hover:text-blue-400 hover:underline break-all">
                             {contact.email}
                         </a>
                     ) : (
@@ -598,7 +630,7 @@ const formatContactNode = (contact: ContactInfo | string): React.ReactNode => {
                 <div className="flex items-start gap-3">
                     <GlobeIcon className={`w-5 h-5 mt-0.5 flex-shrink-0 ${hasWebsite ? 'text-slate-400' : 'text-slate-600'}`} />
                     {hasWebsite ? (
-                        <a href={contact.website} target="_blank" rel="noopener noreferrer" className="text-orange-400 hover:underline break-all">
+                        <a href={contact.website} target="_blank" rel="noopener noreferrer" className="text-orange-400 hover:text-blue-400 hover:underline break-all">
                             {contact.website}
                         </a>
                     ) : (
@@ -660,7 +692,7 @@ const SimilarImportersSection: React.FC<{ importerName: string, onSearch: (name:
                         onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && onSearch(importer.importerName)}
                         aria-label={`View details for ${importer.importerName}`}
                     >
-                        <p className="font-semibold text-slate-200 group-hover:text-orange-300">{importer.importerName}</p>
+                        <p className="font-semibold text-slate-200 group-hover:text-blue-300">{importer.importerName}</p>
                         <p className="text-sm text-slate-400">{importer.location}</p>
                     </div>
                     <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
@@ -669,14 +701,14 @@ const SimilarImportersSection: React.FC<{ importerName: string, onSearch: (name:
                                 e.stopPropagation();
                                 onSubscribe(importer.importerName);
                             }}
-                            className="p-2 rounded-full text-slate-400 hover:bg-slate-700 hover:text-orange-400 transition-colors focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 focus:ring-offset-slate-900"
+                            className="p-2 rounded-full text-slate-400 hover:bg-slate-700 hover:text-blue-400 transition-colors focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 focus:ring-offset-slate-900"
                             aria-label={`Subscribe to alerts for ${importer.importerName}`}
                         >
                             <BellIcon className="w-5 h-5" />
                         </button>
                         <button
                             onClick={() => onSearch(importer.importerName)}
-                            className="bg-slate-700 text-slate-300 font-bold py-2 px-3 rounded-lg group-hover:bg-orange-600 group-hover:text-white transition-colors text-sm flex items-center gap-2"
+                            className="bg-slate-700 text-slate-300 font-bold py-2 px-3 rounded-lg group-hover:bg-blue-600 group-hover:text-white transition-colors text-sm flex items-center gap-2"
                             aria-label={`View details for ${importer.importerName}`}
                         >
                             <SearchIcon className="w-4 h-4" />
@@ -692,6 +724,8 @@ const SimilarImportersSection: React.FC<{ importerName: string, onSearch: (name:
 const ImportHistory: React.FC<{ history: ShipmentEvent[] }> = ({ history }) => {
     const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc');
     const [filterText, setFilterText] = useState('');
+    const [startDate, setStartDate] = useState('');
+    const [endDate, setEndDate] = useState('');
 
     if (!history || history.length === 0) {
         return <div className="text-slate-500 italic mt-4">No specific Bill of Lading records available.</div>;
@@ -699,6 +733,23 @@ const ImportHistory: React.FC<{ history: ShipmentEvent[] }> = ({ history }) => {
 
     const processedHistory = useMemo(() => {
         let data = [...history];
+
+        // Date Range Filtering
+        if (startDate) {
+             const start = new Date(startDate).getTime();
+             data = data.filter(item => {
+                 const itemDate = new Date(item.date).getTime();
+                 return !isNaN(itemDate) && itemDate >= start;
+             });
+        }
+
+        if (endDate) {
+             const end = new Date(endDate).getTime();
+             data = data.filter(item => {
+                 const itemDate = new Date(item.date).getTime();
+                 return !isNaN(itemDate) && itemDate <= end;
+             });
+        }
 
         if (filterText.trim()) {
             const lower = filterText.toLowerCase().trim();
@@ -709,7 +760,8 @@ const ImportHistory: React.FC<{ history: ShipmentEvent[] }> = ({ history }) => {
                 item.portOfDischarge?.toLowerCase().includes(lower) ||
                 item.carrier?.toLowerCase().includes(lower) ||
                 item.hsCode?.toLowerCase().includes(lower) ||
-                item.bolNumber?.toLowerCase().includes(lower)
+                item.bolNumber?.toLowerCase().includes(lower) ||
+                item.source?.toLowerCase().includes(lower)
             );
         }
 
@@ -723,32 +775,75 @@ const ImportHistory: React.FC<{ history: ShipmentEvent[] }> = ({ history }) => {
         });
 
         return data;
-    }, [history, filterText, sortOrder]);
+    }, [history, filterText, sortOrder, startDate, endDate]);
 
     return (
         <div className="mt-6">
-             <div className="flex flex-col sm:flex-row gap-4 mb-6 no-print">
-                 {/* Search Input */}
-                 <div className="relative flex-1 w-full">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <SearchIcon className="h-4 w-4 text-slate-500" />
-                    </div>
-                    <input
-                        type="text"
-                        className="bg-slate-900/50 border border-slate-700 text-slate-200 text-sm rounded-lg focus:ring-orange-500 focus:border-orange-500 block w-full pl-10 p-2.5 placeholder-slate-500 transition-all focus:bg-slate-800"
-                        placeholder="Filter by shipper, port, carrier, BOL #..."
-                        value={filterText}
-                        onChange={(e) => setFilterText(e.target.value)}
-                    />
+             <div className="space-y-4 mb-6 no-print">
+                 {/* Row 1: Search and Sort */}
+                 <div className="flex flex-col sm:flex-row gap-4">
+                     {/* Search Input */}
+                     <div className="relative flex-1 w-full">
+                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <SearchIcon className="h-4 w-4 text-slate-500" />
+                        </div>
+                        <input
+                            type="text"
+                            className="bg-slate-900/50 border border-slate-700 text-slate-200 text-sm rounded-lg focus:ring-orange-500 focus:border-orange-500 block w-full pl-10 p-2.5 placeholder-slate-500 transition-all focus:bg-slate-800"
+                            placeholder="Filter by shipper, port, carrier, BOL #, source..."
+                            value={filterText}
+                            onChange={(e) => setFilterText(e.target.value)}
+                        />
+                     </div>
+                     {/* Sort Button */}
+                     <button
+                        onClick={() => setSortOrder(prev => prev === 'desc' ? 'asc' : 'desc')}
+                        className="flex items-center justify-center gap-2 bg-slate-900/50 border border-slate-700 text-slate-300 hover:text-blue-400 hover:border-blue-500 hover:bg-slate-800 font-medium rounded-lg text-sm px-4 py-2.5 transition-all w-full sm:w-auto min-w-[160px]"
+                     >
+                        <ArrowsUpDownIcon className="w-4 h-4" />
+                        <span>{sortOrder === 'desc' ? 'Newest First' : 'Oldest First'}</span>
+                     </button>
                  </div>
-                 {/* Sort Button */}
-                 <button
-                    onClick={() => setSortOrder(prev => prev === 'desc' ? 'asc' : 'desc')}
-                    className="flex items-center justify-center gap-2 bg-slate-900/50 border border-slate-700 text-slate-300 hover:text-orange-400 hover:border-orange-500 hover:bg-slate-800 font-medium rounded-lg text-sm px-4 py-2 transition-all w-full sm:w-auto min-w-[160px]"
-                 >
-                    <ArrowsUpDownIcon className="w-4 h-4" />
-                    <span>{sortOrder === 'desc' ? 'Newest First' : 'Oldest First'}</span>
-                 </button>
+                 
+                 {/* Row 2: Date Filters */}
+                 <div className="bg-slate-800/30 p-3 rounded-lg border border-slate-700/50 flex flex-col md:flex-row md:items-center gap-4">
+                    <div className="flex items-center gap-2 text-slate-400">
+                        <CalendarDaysIcon className="w-4 h-4" />
+                        <span className="text-sm font-medium">Shipment Date:</span>
+                    </div>
+                    
+                    <div className="flex flex-wrap gap-3 w-full md:w-auto">
+                        <div className="flex items-center gap-2 flex-1 md:flex-initial">
+                            <label htmlFor="startDate" className="text-xs text-slate-500 font-bold uppercase whitespace-nowrap">From</label>
+                            <input
+                                type="date"
+                                id="startDate"
+                                className="bg-slate-800 border border-slate-700 text-slate-200 text-sm rounded-lg focus:ring-orange-500 focus:border-orange-500 p-2 w-full sm:w-auto [color-scheme:dark]"
+                                value={startDate}
+                                onChange={(e) => setStartDate(e.target.value)}
+                            />
+                        </div>
+                        <div className="flex items-center gap-2 flex-1 md:flex-initial">
+                            <label htmlFor="endDate" className="text-xs text-slate-500 font-bold uppercase whitespace-nowrap">To</label>
+                            <input
+                                type="date"
+                                id="endDate"
+                                className="bg-slate-800 border border-slate-700 text-slate-200 text-sm rounded-lg focus:ring-orange-500 focus:border-orange-500 p-2 w-full sm:w-auto [color-scheme:dark]"
+                                value={endDate}
+                                onChange={(e) => setEndDate(e.target.value)}
+                            />
+                        </div>
+                    </div>
+
+                    {(startDate || endDate) && (
+                        <button 
+                            onClick={() => { setStartDate(''); setEndDate(''); }}
+                            className="text-xs text-orange-400 hover:text-red-400 underline ml-auto md:ml-0"
+                        >
+                            Reset
+                        </button>
+                    )}
+                 </div>
             </div>
 
             {/* Desktop Table View */}
@@ -764,6 +859,7 @@ const ImportHistory: React.FC<{ history: ShipmentEvent[] }> = ({ history }) => {
                             <th scope="col" className="px-6 py-3 whitespace-nowrap">BOL #</th>
                             <th scope="col" className="px-6 py-3">Volume</th>
                             <th scope="col" className="px-6 py-3">Commodity / HS Code</th>
+                            <th scope="col" className="px-6 py-3">Source</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -792,6 +888,13 @@ const ImportHistory: React.FC<{ history: ShipmentEvent[] }> = ({ history }) => {
                                 <td className="px-6 py-4 text-xs text-slate-400 max-w-xs">
                                     <div className="font-semibold text-slate-300 truncate" title={item.commodity}>{item.commodity}</div>
                                     {item.hsCode && <div className="text-orange-500/80 font-mono mt-1">HS: {item.hsCode}</div>}
+                                </td>
+                                <td className="px-6 py-4 text-xs">
+                                    {item.source && (
+                                        <span className="bg-slate-700/50 text-slate-400 px-1.5 py-0.5 rounded border border-slate-600/50">
+                                            {item.source}
+                                        </span>
+                                    )}
                                 </td>
                             </tr>
                         ))}
@@ -840,6 +943,11 @@ const ImportHistory: React.FC<{ history: ShipmentEvent[] }> = ({ history }) => {
                             </div>
                             <p className="text-sm text-slate-400">{item.commodity}</p>
                          </div>
+                         {item.source && (
+                             <div className="text-right">
+                                <span className="text-[10px] text-slate-500 bg-slate-800 px-1 rounded">{item.source}</span>
+                             </div>
+                         )}
                     </div>
                 ))}
             </div>
@@ -849,8 +957,8 @@ const ImportHistory: React.FC<{ history: ShipmentEvent[] }> = ({ history }) => {
                     <FunnelIcon className="w-10 h-10 mx-auto mb-3 opacity-30" />
                     <p>No shipment events match your filter.</p>
                     <button 
-                        onClick={() => setFilterText('')}
-                        className="text-orange-400 hover:underline text-sm mt-2"
+                        onClick={() => { setFilterText(''); setStartDate(''); setEndDate(''); }}
+                        className="text-orange-400 hover:text-blue-400 hover:underline text-sm mt-2"
                     >
                         Clear filter
                     </button>
@@ -871,7 +979,7 @@ const Section: React.FC<{icon: React.ReactNode, title: string, children: React.R
 );
 
 
-export const ImporterCard: React.FC<ImporterCardProps> = ({ data, onSubscribe, onExport, onExportPDF, onExportJSON, onSearchSimilar, onRefresh, isRefreshing }) => {
+export const ImporterCard: React.FC<ImporterCardProps> = ({ data, onSubscribe, onExport, onExportPDF, onExportJSON, onSearchSimilar, onRefresh, onClose, isRefreshing }) => {
     const [isContactFormVisible, setIsContactFormVisible] = useState(false);
     const [isSimilarVisible, setIsSimilarVisible] = useState(false);
     const { importerName } = data;
@@ -936,7 +1044,18 @@ export const ImporterCard: React.FC<ImporterCardProps> = ({ data, onSubscribe, o
   return (
     <div className="bg-gradient-to-br from-slate-800 to-slate-900">
       {/* HEADER */}
-      <div className="p-4 sm:p-6 md:p-8 border-b border-slate-700/50 bg-slate-800/20 no-print">
+      <div className="p-4 sm:p-6 md:p-8 border-b border-slate-700/50 bg-slate-800/20 no-print relative">
+        {onClose && (
+            <div className="mb-4">
+                 <button
+                    onClick={onClose}
+                    className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors text-sm font-medium"
+                 >
+                     <ArrowLeftIcon className="w-4 h-4" />
+                     Back to Results
+                 </button>
+            </div>
+        )}
         <div className="flex flex-col md:flex-row justify-between md:items-start gap-4">
             <div>
                 <h2 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-slate-200 to-slate-400 text-transparent bg-clip-text pr-4">
@@ -950,10 +1069,16 @@ export const ImporterCard: React.FC<ImporterCardProps> = ({ data, onSubscribe, o
                 </div>
             </div>
             <div className="flex items-center gap-2 flex-shrink-0 self-end md:self-auto">
+                {isRefreshing && (
+                    <div className="hidden sm:flex items-center gap-2 mr-2 animate-pulse">
+                         <div className="w-2 h-2 rounded-full bg-orange-500"></div>
+                         <span className="text-xs font-medium text-orange-400">Refreshing Data...</span>
+                    </div>
+                )}
                 <button
                     onClick={() => onRefresh(importerName)}
                     disabled={isRefreshing}
-                    className="p-2 rounded-full text-slate-400 hover:bg-slate-700 hover:text-orange-400 transition-colors focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 focus:ring-offset-slate-800 disabled:opacity-50 disabled:cursor-wait"
+                    className="p-2 rounded-full text-slate-400 hover:bg-slate-700 hover:text-blue-400 transition-colors focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 focus:ring-offset-slate-800 disabled:opacity-50 disabled:cursor-wait"
                     aria-label={`Refresh data for ${importerName}`}
                 >
                     <ArrowPathIcon className={`w-6 h-6 ${isRefreshing ? 'animate-spin' : ''}`} />
@@ -962,7 +1087,7 @@ export const ImporterCard: React.FC<ImporterCardProps> = ({ data, onSubscribe, o
                 {/* Dedicated PDF Button */}
                 <button
                     onClick={onExportPDF}
-                    className="p-2 rounded-full text-slate-400 hover:bg-slate-700 hover:text-orange-400 transition-colors focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 focus:ring-offset-slate-800"
+                    className="p-2 rounded-full text-slate-400 hover:bg-slate-700 hover:text-blue-400 transition-colors focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 focus:ring-offset-slate-800"
                     title="Export to PDF"
                     aria-label="Export to PDF"
                 >
@@ -974,7 +1099,7 @@ export const ImporterCard: React.FC<ImporterCardProps> = ({ data, onSubscribe, o
                     <button
                         ref={exportButtonRef}
                         onClick={() => setIsExportOpen(!isExportOpen)}
-                        className="p-2 rounded-full text-slate-400 hover:bg-slate-700 hover:text-orange-400 transition-colors focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 focus:ring-offset-slate-800"
+                        className="p-2 rounded-full text-slate-400 hover:bg-slate-700 hover:text-blue-400 transition-colors focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 focus:ring-offset-slate-800"
                         aria-label="Export options"
                     >
                         <ArrowDownTrayIcon className="w-6 h-6" />
@@ -1002,7 +1127,7 @@ export const ImporterCard: React.FC<ImporterCardProps> = ({ data, onSubscribe, o
 
                 <button
                 onClick={() => onSubscribe(importerName)}
-                className="p-2 rounded-full text-slate-400 hover:bg-slate-700 hover:text-orange-400 transition-colors focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 focus:ring-offset-slate-800"
+                className="p-2 rounded-full text-slate-400 hover:bg-slate-700 hover:text-blue-400 transition-colors focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 focus:ring-offset-slate-800"
                 aria-label={`Subscribe to alerts for ${importerName}`}
                 >
                 <BellIcon className="w-6 h-6" />
@@ -1011,7 +1136,7 @@ export const ImporterCard: React.FC<ImporterCardProps> = ({ data, onSubscribe, o
                     <button
                         ref={shareButtonRef}
                         onClick={() => setIsShareOpen(prev => !prev)}
-                        className="p-2 rounded-full text-slate-400 hover:bg-slate-700 hover:text-orange-400 transition-colors focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 focus:ring-offset-slate-800"
+                        className="p-2 rounded-full text-slate-400 hover:bg-slate-700 hover:text-blue-400 transition-colors focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 focus:ring-offset-slate-800"
                         aria-label={`Share data for ${importerName}`}
                     >
                         <ArrowUpTrayIcon className="w-6 h-6" />
@@ -1060,6 +1185,26 @@ export const ImporterCard: React.FC<ImporterCardProps> = ({ data, onSubscribe, o
 
       {/* MAIN CONTENT */}
       <div className="p-4 sm:p-6 md:p-8">
+        
+        {/* Scraped Data Alert */}
+        {data.scrapedData && data.scrapedData.length > 0 && (
+             <div className="mb-8 p-4 bg-blue-900/20 border border-blue-800 rounded-lg flex items-start gap-3 no-print animate-fade-in">
+                 <InfoIcon className="w-6 h-6 text-blue-400 mt-0.5 flex-shrink-0" />
+                 <div>
+                     <h4 className="font-bold text-blue-300">Additional Scraped Data Available</h4>
+                     <p className="text-sm text-blue-200/80 mb-2">We found additional records from public scrapers ({data.scrapedData[0].source}).</p>
+                     <div className="text-sm space-y-1">
+                         {data.scrapedData[0].lastShipmentDate && (
+                             <p><span className="text-blue-400 font-medium">Last Shipment:</span> {data.scrapedData[0].lastShipmentDate}</p>
+                         )}
+                         {data.scrapedData[0].origin && (
+                             <p><span className="text-blue-400 font-medium">Origin:</span> {data.scrapedData[0].origin}</p>
+                         )}
+                     </div>
+                 </div>
+             </div>
+        )}
+
         {/* TOP GRID */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-x-8 gap-y-6 md:gap-y-10">
           <div className="md:col-span-2">
@@ -1076,7 +1221,12 @@ export const ImporterCard: React.FC<ImporterCardProps> = ({ data, onSubscribe, o
                 {isLoading ? (
                     <SkeletonLoader className="h-5 w-1/2" />
                 ) : data.lastShipmentDate && data.lastShipmentDate.toLowerCase() !== 'data not available' ? (
-                    <p className="text-slate-200 text-lg font-semibold">{data.lastShipmentDate}</p>
+                    <div>
+                        <p className="text-slate-200 text-lg font-semibold">{data.lastShipmentDate}</p>
+                        {data.scrapedData && data.scrapedData[0]?.lastShipmentDate && data.scrapedData[0].lastShipmentDate !== data.lastShipmentDate && (
+                             <p className="text-xs text-blue-400 mt-1">Alt: {data.scrapedData[0].lastShipmentDate} ({data.scrapedData[0].source})</p>
+                        )}
+                    </div>
                 ) : (
                     <p className="text-slate-500 italic">No Information regarding last shipment available</p>
                 )}
@@ -1124,6 +1274,20 @@ export const ImporterCard: React.FC<ImporterCardProps> = ({ data, onSubscribe, o
                 )}
             </Section>
           </div>
+          
+           {/* Shipper Information Section */}
+           <div className="pt-10 border-t border-slate-700/50 avoid-break">
+               <Section icon={<BuildingOfficeIcon className="w-7 h-7 text-orange-400" />} title="Shipper Information (Top Suppliers)">
+                   {isLoading ? (
+                       <div className="grid md:grid-cols-2 gap-4">
+                           <SkeletonLoader className="h-20 w-full" />
+                           <SkeletonLoader className="h-20 w-full" />
+                       </div>
+                   ) : (
+                       <ShipperInformationList suppliers={data.topSuppliers} />
+                   )}
+               </Section>
+           </div>
           
           <div className="pt-10 border-t border-slate-700/50 avoid-break">
             <Section icon={<ShieldCheckIcon className="w-7 h-7 text-orange-400" />} title="Risk Assessment">
@@ -1192,7 +1356,7 @@ export const ImporterCard: React.FC<ImporterCardProps> = ({ data, onSubscribe, o
              >
                 <div className="flex items-center gap-3">
                     <UsersIcon className="w-7 h-7 text-orange-400" />
-                    <h3 className="text-xl font-bold text-slate-200 group-hover:text-orange-300 transition-colors">Similar Importers</h3>
+                    <h3 className="text-xl font-bold text-slate-200 group-hover:text-blue-300 transition-colors">Similar Importers</h3>
                 </div>
                 <ChevronDownIcon className={`w-6 h-6 text-slate-400 transition-transform duration-300 ${isSimilarVisible ? 'rotate-180' : ''}`} />
              </div>
@@ -1217,7 +1381,7 @@ export const ImporterCard: React.FC<ImporterCardProps> = ({ data, onSubscribe, o
             >
                 <div className="flex items-center gap-3">
                     <EnvelopeIcon className="w-7 h-7 text-orange-400" />
-                    <h3 className="text-xl font-bold text-slate-200 group-hover:text-orange-300 transition-colors">Contact Importer</h3>
+                    <h3 className="text-xl font-bold text-slate-200 group-hover:text-blue-300 transition-colors">Contact Importer</h3>
                 </div>
                 <ChevronDownIcon className={`w-6 h-6 text-slate-400 transition-transform duration-300 ${isContactFormVisible ? 'rotate-180' : ''}`} />
             </div>
